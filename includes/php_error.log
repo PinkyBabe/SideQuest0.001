@@ -1,0 +1,54 @@
+[19-Dec-2024 17:12:38 Asia/Manila] Login attempt - POST data: Array
+(
+    [action] => login
+    [email] => admin@example.com
+    [password] => admin123
+)
+
+[19-Dec-2024 17:12:38 Asia/Manila] User found: Array
+(
+    [id] => 2
+    [first_name] => Admin
+    [last_name] => User
+    [email] => admin@example.com
+    [password] => admin123
+    [role] => admin
+    [room_number] => 
+    [office_name] => 
+    [created_at] => 2024-12-19 16:37:46
+)
+
+[19-Dec-2024 17:27:15 Asia/Manila] Received input: {"faculty_id":3,"status":true}
+[19-Dec-2024 17:27:15 Asia/Manila] Error in toggle_faculty_status: Database prepare error: Unknown column 'is_active' in 'field list'
+[19-Dec-2024 17:39:02 Asia/Manila] Received input: {"faculty_id":4,"status":false}
+[19-Dec-2024 17:39:02 Asia/Manila] Error in toggle_faculty_status: Prepare error: Unknown column 'is_active' in 'field list'
+[19-Dec-2024 17:39:14 Asia/Manila] Received input: {"faculty_id":4,"status":false}
+[19-Dec-2024 17:39:14 Asia/Manila] Error in toggle_faculty_status: Prepare error: Unknown column 'is_active' in 'field list'
+[19-Dec-2024 17:41:27 Asia/Manila] Received input: {"faculty_id":4,"status":false}
+[19-Dec-2024 17:41:27 Asia/Manila] Error in toggle_faculty_status: Prepare error: Unknown column 'is_active' in 'field list'
+[19-Dec-2024 17:41:48 Asia/Manila] Received input: {"faculty_id":4,"status":false}
+[19-Dec-2024 17:41:48 Asia/Manila] Error in toggle_faculty_status: Prepare error: Unknown column 'is_active' in 'field list'
+[19-Dec-2024 22:32:49 Asia/Manila] Received input: {"faculty_id":2,"status":false}
+[19-Dec-2024 22:32:55 Asia/Manila] Received input: {"faculty_id":2,"status":true}
+[19-Dec-2024 22:34:21 Asia/Manila] Received input: {"faculty_id":3,"status":false}
+[19-Dec-2024 22:34:29 Asia/Manila] Received input: {"faculty_id":3,"status":true}
+[20-Dec-2024 06:36:27 Asia/Manila] Checking user role. Session data: Array
+(
+    [user_id] => 1
+    [role] => admin
+    [name] => Admin User
+)
+
+[20-Dec-2024 06:36:27 Asia/Manila] Database connection successful
+[20-Dec-2024 06:36:27 Asia/Manila] User role from database: admin
+[20-Dec-2024 06:36:27 Asia/Manila] Received input: {"faculty_id":4,"status":false}
+[20-Dec-2024 06:36:33 Asia/Manila] Checking user role. Session data: Array
+(
+    [user_id] => 1
+    [role] => admin
+    [name] => Admin User
+)
+
+[20-Dec-2024 06:36:33 Asia/Manila] Database connection successful
+[20-Dec-2024 06:36:33 Asia/Manila] User role from database: admin
+[20-Dec-2024 06:36:33 Asia/Manila] Received input: {"faculty_id":4,"status":true}
