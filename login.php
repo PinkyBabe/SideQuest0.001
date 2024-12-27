@@ -20,6 +20,14 @@ if (isset($_SESSION['user_id'])) {
     }
     exit();
 }
+
+// Check if this is a logout or session expiry
+$message = '';
+if (isset($_GET['session']) && $_GET['session'] === 'expired') {
+    $message = 'Your session has expired. Please log in again.';
+} else if (isset($_GET['logout']) && $_GET['logout'] === 'success') {
+    $message = 'You have been successfully logged out.';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -135,6 +143,25 @@ if (isset($_SESSION['user_id'])) {
                 transform: translateY(0);
             }
         }
+
+        .message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .message.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -144,14 +171,18 @@ if (isset($_SESSION['user_id'])) {
             <p>Login to your SideQuest account</p>
         </div>
         
+        <?php if ($message): ?>
+        <div class="message show"><?php echo htmlspecialchars($message); ?></div>
+        <?php endif; ?>
+        
         <div id="error-message"></div>
         
         <form onsubmit="handleLogin(event)">
             <div class="form-group">
-                <input type="email" name="email" required placeholder="Email">
+                <input type="email" name="email" id="email" required placeholder="Email">
             </div>
             <div class="form-group">
-                <input type="password" name="password" required placeholder="Password">
+                <input type="password" name="password" id="password" required placeholder="Password">
             </div>
             <button type="submit">Login</button>
         </form>
@@ -162,8 +193,21 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
     <script>
+    // Show message if it exists in URL parameters
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = document.querySelector('.message');
+        if (message) {
+            message.classList.add('show');
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 5000);
+        }
+    }
+
     async function handleLogin(e) {
         e.preventDefault();
+        
         const form = e.target;
         const formData = new FormData(form);
         formData.append('action', 'login');

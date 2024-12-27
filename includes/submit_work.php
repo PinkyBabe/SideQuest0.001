@@ -1,49 +1,82 @@
 <?php
-require_once 'config.php';
-require_once 'auth_middleware.php';
+require_once 'db_connect.php';
+require_once 'auth_check.php';
 
-checkUserRole(['student']);
-
-$conn = Database::getInstance();
-$response = ['success' => false, 'message' => ''];
-
-try {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $quest_id = $data['quest_id'] ?? null;
-    $student_id = $_SESSION['user_id'];
-
-    if (!$quest_id) {
-        throw new Exception('Quest ID is required');
-    }
-
-    // Check if quest belongs to student
-    $check = $conn->prepare("SELECT id FROM user_quests WHERE quest_id = ? AND student_id = ? AND status = 'accepted'");
-    $check->bind_param('ii', $quest_id, $student_id);
-    $check->execute();
-    $result = $check->get_result();
-
-    if ($result->num_rows === 0) {
-        throw new Exception('Quest not found or not accepted');
-    }
-
-    // Update quest status
-    $stmt = $conn->prepare("UPDATE user_quests SET status = 'completed', completed_at = NOW() WHERE quest_id = ? AND student_id = ?");
-    $stmt->bind_param('ii', $quest_id, $student_id);
-    
-    if ($stmt->execute()) {
-        // Update post status
-        $update = $conn->prepare("UPDATE posts SET status = 'completed' WHERE id = ?");
-        $update->bind_param('i', $quest_id);
-        $update->execute();
-        
-        $response['success'] = true;
-        $response['message'] = 'Work submitted successfully';
-    } else {
-        throw new Exception('Failed to submit work');
-    }
-} catch (Exception $e) {
-    $response['message'] = $e->getMessage();
+// Ensure user is logged in and is a student
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
+    exit;
 }
 
-header('Content-Type: application/json');
-echo json_encode($response); 
+// Get POST data
+$data = json_decode(file_get_contents('php://input'), true);
+
+if (!isset($data['quest_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Quest ID is required']);
+    exit;
+}
+
+try {
+    $student_id = $_SESSION['user_id'];
+    $quest_id = $data['quest_id'];
+    
+    // Check if quest exists and student is assigned to it
+    $check_query = "SELECT qa.id, qa.status 
+                   FROM quest_assignments qa 
+                   WHERE qa.student_id = ? AND qa.quest_id = ? AND qa.status = 'active'";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param('ii', $student_id, $quest_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        echo json_encode(['success' => false, 'message' => 'Quest not found or not active']);
+        exit;
+    }
+    
+    // Update quest status to completed
+    $update_query = "UPDATE quest_assignments 
+                    SET status = 'completed', completed_at = NOW() 
+                    WHERE student_id = ? AND quest_id = ?";
+    $stmt = $conn->prepare($update_query);
+    $stmt->bind_param('ii', $student_id, $quest_id);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('Failed to update quest status');
+    }
+    
+    // Get quest rewards
+    $rewards_query = "SELECT cash_reward, snack_reward 
+                     FROM quests 
+                     WHERE id = ?";
+    $stmt = $conn->prepare($rewards_query);
+    $stmt->bind_param('i', $quest_id);
+    $stmt->execute();
+    $rewards = $stmt->get_result()->fetch_assoc();
+    
+    // Update student rewards
+    $update_rewards = "UPDATE students 
+                      SET total_cash = total_cash + ?, total_snacks = total_snacks + ? 
+                      WHERE user_id = ?";
+    $stmt = $conn->prepare($update_rewards);
+    $snack_reward = $rewards['snack_reward'] ? 1 : 0;
+    $stmt->bind_param('dii', $rewards['cash_reward'], $snack_reward, $student_id);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('Failed to update rewards');
+    }
+    
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Work submitted successfully',
+        'rewards' => [
+            'cash' => $rewards['cash_reward'],
+            'snack' => $rewards['snack_reward'] == 1
+        ]
+    ]);
+} catch (Exception $e) {
+    error_log("Error in submit_work.php: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Failed to submit work']);
+}
+
+$conn->close(); 

@@ -1,27 +1,19 @@
 <?php
-require_once 'session.php';
 require_once 'config.php';
 require_once 'functions.php';
+require_once 'auth_middleware.php';
 
-// Check if user is admin
-checkUserRole(['admin']);
-
-$response = [
-    'success' => false,
-    'message' => '',
-    'faculty_name' => '',
-    'email' => '',
-    'password' => ''
-];
+header('Content-Type: application/json');
 
 try {
+    checkUserRole(['admin']);
+    
     if (!isset($_GET['id'])) {
         throw new Exception('Faculty ID is required');
     }
 
     $conn = Database::getInstance();
     
-    // Get faculty details including the actual password
     $stmt = $conn->prepare("
         SELECT first_name, last_name, email, actual_password 
         FROM users 
@@ -38,16 +30,17 @@ try {
     
     $faculty = $result->fetch_assoc();
     
-    $response['success'] = true;
-    $response['faculty_name'] = $faculty['first_name'] . ' ' . $faculty['last_name'];
-    $response['email'] = $faculty['email'];
-    $response['password'] = $faculty['actual_password'];
+    echo json_encode([
+        'success' => true,
+        'faculty_name' => $faculty['first_name'] . ' ' . $faculty['last_name'],
+        'email' => $faculty['email'],
+        'password' => $faculty['actual_password']
+    ]);
 
 } catch (Exception $e) {
-    $response['message'] = $e->getMessage();
-    error_log("Error in get_faculty_password: " . $e->getMessage());
-}
-
-header('Content-Type: application/json');
-echo json_encode($response);
-exit; 
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
+} 

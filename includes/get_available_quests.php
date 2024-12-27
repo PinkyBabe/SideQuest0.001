@@ -1,66 +1,71 @@
 <?php
 require_once 'config.php';
 require_once 'auth_middleware.php';
-require_once 'helpers.php';
 
-// Prevent any output before our JSON response
-ob_start();
+checkUserRole(['student']);
+
+$response = ['success' => false, 'quests' => [], 'message' => ''];
 
 try {
-    checkUserRole(['student']);
-    
+    $student_id = $_SESSION['user_id'];
     $conn = Database::getInstance();
     
-    // Check if database connection is valid
-    if ($conn->connect_error) {
-        throw new Exception("Database connection failed");
+    // Get available quests that:
+    // 1. Are active
+    // 2. Haven't been accepted by this student
+    // 3. Haven't been completed
+    $query = "
+        SELECT 
+            q.*,
+            u.first_name,
+            u.last_name,
+            u.email as faculty_email,
+            u.office_name,
+            u.room_number
+        FROM quests q
+        JOIN users u ON q.faculty_id = u.id
+        WHERE q.status = 'active'
+        AND q.id NOT IN (
+            SELECT quest_id 
+            FROM user_quests 
+            WHERE student_id = ?
+        )
+        ORDER BY q.created_at DESC
+    ";
+    
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $student_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result) {
+        $quests = [];
+        while ($row = $result->fetch_assoc()) {
+            $quests[] = [
+                'id' => $row['id'],
+                'faculty_name' => $row['first_name'] . ' ' . $row['last_name'],
+                'faculty_email' => $row['faculty_email'],
+                'office_name' => $row['office_name'],
+                'room_number' => $row['room_number'],
+                'description' => $row['description'],
+                'job_type' => $row['job_type'],
+                'location' => $row['location'],
+                'meeting_time' => $row['meeting_time'],
+                'estimated_hours' => $row['estimated_hours'],
+                'cash_reward' => $row['cash_reward'],
+                'snack_reward' => $row['snack_reward'],
+                'created_at' => $row['created_at']
+            ];
+        }
+        
+        $response['success'] = true;
+        $response['quests'] = $quests;
+    } else {
+        throw new Exception("Error fetching quests");
     }
-
-    // Check if quests table exists
-    $tableCheck = $conn->query("SHOW TABLES LIKE 'quests'");
-    if ($tableCheck->num_rows === 0) {
-        throw new Exception("Database tables not initialized");
-    }
-
-    $query = "SELECT q.*, u.first_name, u.last_name, u.profile_pic 
-              FROM quests q 
-              JOIN users u ON q.faculty_id = u.id 
-              WHERE q.status = 'active' 
-              ORDER BY q.created_at DESC";
-    
-    $result = $conn->query($query);
-    
-    if ($result === false) {
-        throw new Exception("Database query failed: " . $conn->error);
-    }
-    
-    $quests = [];
-    while ($row = $result->fetch_assoc()) {
-        $quests[] = [
-            'id' => $row['id'],
-            'faculty_name' => $row['first_name'] . ' ' . $row['last_name'],
-            'faculty_pic' => $row['profile_pic'] ?: 'images/default_avatar.png',
-            'description' => $row['description'],
-            'jobType' => $row['job_type'],
-            'created_at' => $row['created_at'],
-            'rewards' => [
-                'cash' => $row['cash_reward'],
-                'snack' => $row['snack_reward'] == 1
-            ]
-        ];
-    }
-    
-    ob_end_clean();
-    sendJsonResponse([
-        'success' => true,
-        'quests' => $quests
-    ]);
-    
 } catch (Exception $e) {
-    ob_end_clean();
-    error_log("Error in get_available_quests.php: " . $e->getMessage());
-    sendJsonResponse([
-        'success' => false,
-        'message' => $e->getMessage()
-    ], 500);
-} 
+    $response['message'] = $e->getMessage();
+}
+
+header('Content-Type: application/json');
+echo json_encode($response); 

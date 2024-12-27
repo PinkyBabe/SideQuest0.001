@@ -45,4 +45,26 @@ async function logout() {
         console.error('Logout error:', error);
         window.location.href = 'login.php'; // Redirect anyway on error
     }
+}
+
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showNotification(message, type = 'error') {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 } 

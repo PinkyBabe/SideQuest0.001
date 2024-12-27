@@ -11,47 +11,53 @@ try {
         throw new Exception('User not logged in');
     }
 
-    // Check if user is faculty
-    checkUserRole(['faculty']);
-
-    $faculty_id = $_SESSION['user_id'];
     $conn = Database::getInstance();
+    $role = $_SESSION['role'];
+    $user_id = $_SESSION['user_id'];
     
-    // First, verify the faculty exists
-    $checkFaculty = $conn->prepare("SELECT id FROM users WHERE id = ? AND role = 'faculty'");
-    if (!$checkFaculty) {
-        throw new Exception("Database error: " . $conn->error);
+    // Different queries for faculty and students
+    if ($role === 'faculty') {
+        // Faculty can only see their own posts
+        $query = "
+            SELECT 
+                q.*,
+                CONCAT(u.first_name, ' ', u.last_name) as faculty_name,
+                u.office_name,
+                u.room_number,
+                (SELECT COUNT(*) FROM user_quests WHERE quest_id = q.id) as application_count
+            FROM quests q
+            JOIN users u ON q.faculty_id = u.id
+            WHERE q.faculty_id = ?
+            ORDER BY q.created_at DESC
+        ";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $user_id);
+    } else {
+        // Students can see all active posts
+        $query = "
+            SELECT 
+                q.*,
+                CONCAT(u.first_name, ' ', u.last_name) as faculty_name,
+                u.office_name,
+                u.room_number,
+                CASE 
+                    WHEN uq.student_id IS NOT NULL THEN 1
+                    ELSE 0
+                END as has_applied
+            FROM quests q
+            JOIN users u ON q.faculty_id = u.id
+            LEFT JOIN user_quests uq ON q.id = uq.quest_id AND uq.student_id = ?
+            WHERE q.status = 'active'
+            ORDER BY q.created_at DESC
+        ";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("i", $user_id);
     }
     
-    $checkFaculty->bind_param("i", $faculty_id);
-    if (!$checkFaculty->execute()) {
-        throw new Exception("Execute failed: " . $checkFaculty->error);
-    }
-    
-    $result = $checkFaculty->get_result();
-    if ($result->num_rows === 0) {
-        throw new Exception("Invalid faculty user");
-    }
-
-    // Get faculty's posts with rewards
-    $query = "
-        SELECT 
-            q.*,
-            u.first_name,
-            u.last_name,
-            u.office_name
-        FROM quests q
-        LEFT JOIN users u ON q.faculty_id = u.id
-        WHERE q.faculty_id = ?
-        ORDER BY q.created_at DESC
-    ";
-    
-    $stmt = $conn->prepare($query);
     if (!$stmt) {
         throw new Exception("Database error: " . $conn->error);
     }
     
-    $stmt->bind_param("i", $faculty_id);
     if (!$stmt->execute()) {
         throw new Exception("Query failed: " . $stmt->error);
     }
@@ -60,7 +66,7 @@ try {
     $posts = [];
     
     while ($row = $result->fetch_assoc()) {
-        $posts[] = [
+        $post = [
             'id' => $row['id'],
             'description' => $row['description'],
             'jobType' => $row['job_type'],
@@ -69,13 +75,23 @@ try {
             'estimatedHours' => $row['estimated_hours'],
             'status' => $row['status'],
             'created_at' => $row['created_at'],
-            'faculty_name' => $row['first_name'] . ' ' . $row['last_name'],
+            'faculty_name' => $row['faculty_name'],
             'department' => $row['office_name'],
+            'room_number' => $row['room_number'] ?? '',
             'rewards' => [
                 'cash' => $row['cash_reward'],
                 'snack' => $row['snack_reward'] == 1
             ]
         ];
+
+        // Add role-specific data
+        if ($role === 'faculty') {
+            $post['application_count'] = $row['application_count'];
+        } else {
+            $post['has_applied'] = $row['has_applied'] == 1;
+        }
+
+        $posts[] = $post;
     }
     
     echo json_encode([
@@ -85,7 +101,13 @@ try {
     
 } catch (Exception $e) {
     error_log("Error in get_faculty_posts.php: " . $e->getMessage());
-    http_response_code(400);
+    
+    // Clear any output buffers
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    
+    http_response_code(500);
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
