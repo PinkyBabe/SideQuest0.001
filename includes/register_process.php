@@ -29,23 +29,26 @@ try {
     }
 
     // Insert new student
+    $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $stmt = $conn->prepare("
         INSERT INTO users (
             first_name, 
             last_name, 
             email, 
+            password,
             actual_password,
             role, 
             course_id,
             is_active
-        ) VALUES (?, ?, ?, ?, 'student', ?, 1)
+        ) VALUES (?, ?, ?, ?, ?, 'student', ?, 1)
     ");
 
     $stmt->bind_param(
-        "ssssi",
+        "sssssi",
         $_POST['firstName'],
         $_POST['lastName'],
         $_POST['email'],
+        $hashed_password,
         $_POST['password'],
         $_POST['course']
     );

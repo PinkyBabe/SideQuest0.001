@@ -40,12 +40,33 @@ $students = getStudentList();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - SideQuest</title>
-    <link rel="stylesheet" href="./css/style.css">
-    <link rel="stylesheet" href="./css/admin.css">
+    <!-- Base styles first -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Shared dashboard styles -->
+    <link rel="stylesheet" href="css/shared_dashboard.css">
+    <!-- Admin specific styles last -->
+    <link rel="stylesheet" href="css/admin.css">
+    <!-- Cache control -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <!-- Force CSS reload -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force reload CSS files
+            const links = document.getElementsByTagName('link');
+            for (let i = 0; i < links.length; i++) {
+                if (links[i].rel === 'stylesheet') {
+                    const href = links[i].href.split('?')[0];
+                    links[i].href = href + '?v=' + new Date().getTime();
+                }
+            }
+            // Add class to body after styles are loaded
+            document.body.classList.add('styles-loaded');
+        });
+    </script>
 </head>
 <body>
     <div class="box sidebar-hidden">
@@ -80,19 +101,19 @@ $students = getStudentList();
             <div class="stats-container">
                 <div class="stat-card">
                     <h3>Faculty Members</h3>
-                    <p><?php echo $stats['faculty_count']; ?></p>
+                    <p data-stat="faculty_count"><?php echo $stats['faculty_count']; ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Students</h3>
-                    <p><?php echo $stats['student_count']; ?></p>
+                    <p data-stat="student_count"><?php echo $stats['student_count']; ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Active Posts</h3>
-                    <p><?php echo $stats['active_posts']; ?></p>
+                    <p data-stat="active_posts"><?php echo $stats['active_posts']; ?></p>
                 </div>
                 <div class="stat-card">
                     <h3>Completed Tasks</h3>
-                    <p><?php echo $stats['completed_tasks']; ?></p>
+                    <p data-stat="completed_tasks"><?php echo $stats['completed_tasks']; ?></p>
                 </div>
             </div>
         </div>
@@ -130,8 +151,8 @@ $students = getStudentList();
                 <button class="add-btn" onclick="showModal('addStudentModal')">Add Student</button>
             </div>
             
-            <div class="faculty-list">
-                <table>
+            <div class="table-container">
+                <table id="studentList">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -300,30 +321,30 @@ $students = getStudentList();
     </div>
 
     <!-- View Faculty Password Modal -->
-    <div id="viewFacultyPasswordModal" class="modal password-modal">
+    <div id="viewPasswordModal" class="modal">
         <div class="modal-content">
             <h2>Faculty Password</h2>
-            <div class="password-details">
+            <div class="student-details">
                 <div class="detail-row">
                     <label>Name:</label>
-                    <span id="viewFacultyPasswordName"></span>
+                    <span id="viewPasswordName"></span>
                 </div>
                 <div class="detail-row">
                     <label>Email:</label>
-                    <span id="viewFacultyPasswordEmail"></span>
+                    <span id="viewPasswordEmail"></span>
                 </div>
                 <div class="detail-row">
                     <label>Password:</label>
                     <div style="display: flex; align-items: center;">
-                        <span id="viewFacultyPasswordValue"></span>
-                        <button class="copy-button" onclick="copyPassword('viewFacultyPasswordValue')">
+                        <span id="viewPasswordValue"></span>
+                        <button class="copy-button" onclick="copyPassword('viewPasswordValue')">
                             Copy
                         </button>
                     </div>
                 </div>
             </div>
             <div class="modal-buttons">
-                <button type="button" class="btn-secondary" onclick="hideModal('viewFacultyPasswordModal')">Close</button>
+                <button type="button" class="btn-secondary" onclick="hideModal('viewPasswordModal')">Close</button>
             </div>
         </div>
     </div>
@@ -367,11 +388,16 @@ $students = getStudentList();
                 </div>
                 <div class="detail-row">
                     <label>Password:</label>
-                    <span id="viewStudentPasswordValue"></span>
+                    <div style="display: flex; align-items: center;">
+                        <span id="viewStudentPasswordValue"></span>
+                        <button class="copy-button" onclick="copyPassword('viewStudentPasswordValue')">
+                            Copy
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" onclick="hideModal('viewStudentPasswordModal')">Close</button>
+                <button type="button" class="btn-secondary" onclick="hideModal('viewStudentPasswordModal')">Close</button>
             </div>
         </div>
     </div>

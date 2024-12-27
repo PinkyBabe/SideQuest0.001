@@ -1,25 +1,12 @@
 <?php
-// Turn off error display
-ini_set('display_errors', 0);
-error_reporting(0);
-
-require_once 'session.php';
 require_once 'config.php';
 require_once 'functions.php';
+require_once 'auth_middleware.php';
 
 // Check if user is admin
 checkUserRole(['admin']);
 
-// Clear any previous output
-if (ob_get_length()) ob_clean();
-
-$response = [
-    'success' => false,
-    'message' => '',
-    'student_name' => '',
-    'email' => '',
-    'password' => ''
-];
+header('Content-Type: application/json');
 
 try {
     if (!isset($_GET['id'])) {
@@ -44,17 +31,17 @@ try {
     
     $student = $result->fetch_assoc();
     
-    $response['success'] = true;
-    $response['student_name'] = $student['first_name'] . ' ' . $student['last_name'];
-    $response['email'] = $student['email'];
-    $response['password'] = $student['actual_password'];
+    echo json_encode([
+        'success' => true,
+        'student_name' => $student['first_name'] . ' ' . $student['last_name'],
+        'email' => $student['email'],
+        'password' => $student['actual_password']
+    ]);
 
 } catch (Exception $e) {
-    $response['message'] = $e->getMessage();
-    error_log("Error in get_student_password: " . $e->getMessage());
-}
-
-// Ensure clean output
-header('Content-Type: application/json');
-echo json_encode($response);
-exit; 
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
+} 

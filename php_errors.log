@@ -1086,3 +1086,10 @@ Stack trace:
 [20-Dec-2024 00:55:16 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
 [20-Dec-2024 00:58:23 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
 [20-Dec-2024 00:59:13 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:12:50 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:20:36 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:20:41 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:20:53 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:26:55 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 01:58:07 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
+[24-Dec-2024 02:00:36 Europe/Berlin] PHP Notice:  session_start(): Ignoring session_start() because a session is already active in C:\xampp\htdocs\sidequest\includes\config.php on line 3
